@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 
 const AUTH_KEY = "wvrtp_auth";
 const VALID_USERNAME = "WVRTP";
-const VALID_PASSWORD = import.meta.env.VITE_APP_PASSWORD || "inspector2026";
+const VALID_PASSWORD = "inspector2026";
 
 export function useAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -15,7 +15,7 @@ export function useAuth() {
     setLoginPending(true);
     setLoginError(null);
 
-    await new Promise((r) => setTimeout(r, 300)); // natural feel
+    await new Promise((r) => setTimeout(r, 300));
 
     if (
       creds.username.trim() === VALID_USERNAME &&
@@ -34,6 +34,3 @@ export function useAuth() {
     localStorage.removeItem(AUTH_KEY);
     setIsAuthenticated(false);
   }, []);
-
-  return { isAuthenticated, login, logout, loginError, loginPending };
-}

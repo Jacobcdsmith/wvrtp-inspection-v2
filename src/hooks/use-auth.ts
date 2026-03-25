@@ -34,3 +34,6 @@ export function useAuth() {
     localStorage.removeItem(AUTH_KEY);
     setIsAuthenticated(false);
   }, []);
+
+  return { isAuthenticated, login, logout, loginError, loginPending };
+}

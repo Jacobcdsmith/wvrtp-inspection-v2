@@ -23,6 +23,7 @@ No backend. No database. No app install. All storage and automation lives in Mic
 | State | React context + localStorage | Auth state and inspection history |
 | HTTP | Native `fetch` | Direct webhook POST, no proxy |
 | Icons | Lucide React | |
+| Testing | Vitest | `npm test` / `npm run test:watch` |
 | Deployment | Vercel (static) | `vercel.json` rewrites all routes to `index.html` |
 
 ---
@@ -45,8 +46,10 @@ src/
     ui/                # shadcn/ui components (toast, tooltip, etc.)
   hooks/
     use-toast.ts       # Toast hook
+  __tests__/
+    inspection.test.ts # Unit tests — CHECKLISTS, saveToHistory, getUrlParam, validation
   lib/
-    queryClient.ts     # TanStack Query client (minimal config, used for provider only)
+    utils.ts           # cn() utility
 ```
 
 ---
@@ -56,12 +59,14 @@ src/
 Front-end only. There is no server-side session.
 
 - Username is hardcoded: `WVRTP`
-- Password is set via env var: `VITE_APP_PASSWORD` (default: `inspector2026`)
+- Password is set via `VITE_APP_PASSWORD` — read at **build time** by Vite and embedded verbatim in the JS bundle
 - On successful login, `isAuthenticated: true` is written to `localStorage`
 - `AuthProvider` in `auth-context.tsx` reads this on mount and exposes `login()` / `logout()`
 - All routes other than `/` (login) are gated by `isAuthenticated` in `AppRouter`
 
-> Rotate the password by updating `VITE_APP_PASSWORD` in Vercel environment settings and redeploying. No code changes needed.
+> **Security note:** `VITE_` prefixed variables are embedded in the compiled JavaScript at build time. The password is therefore visible to anyone who downloads the JS bundle — it is a deterrent, not a secret. This is acceptable for an internal campus tool. Do not use this pattern if the app is ever exposed to the public internet.
+
+> **To change the password:** update `VITE_APP_PASSWORD` in Vercel environment settings and redeploy. Vite will embed the new value in the next build. The old bundle (with the old password) continues to work until it is replaced by the new deployment.
 
 ---
 
@@ -81,13 +86,15 @@ Front-end only. There is no server-side session.
 | Fire Suppression | Gauge Pressure (PSI), Tamper Seal, Signage, Access Clear |
 | Other | General Condition + Notes (required) |
 
-Changing the type clears all checklist values.
+Changing the type clears all checklist values. All fields are required before submission. Number fields enforce `min`/`max` bounds defined in `CHECKLISTS`.
+
+**Inspector name persistence:** The inspector name is saved to `localStorage` under `wvrtp_inspector_name` and restored on page load, so staff do not need to retype their name between submissions.
 
 **GPS:** `navigator.geolocation.getCurrentPosition` fires on page load. Coordinates are reverse-geocoded to a human-readable address via Nominatim (OpenStreetMap, no API key). GPS failure is non-blocking — the form still submits.
 
-**Local history:** Every submission is saved to `localStorage` under `wvrtp_inspections` (capped at 200 records) before the webhook fires. If the webhook fails, the local record is still saved and the user sees a warning toast.
+**Local history:** Every submission is saved to `localStorage` under `wvrtp_inspections` (capped at 200 records) before the webhook fires. If the webhook fails, the local record is still saved and the user sees a warning toast including the HTTP status code.
 
-**Webhook POST:** If `VITE_WEBHOOK_URL` is set, the form POSTs a flat JSON object to that URL. See payload shape below.
+**Webhook POST:** If `VITE_WEBHOOK_URL` is set, the form POSTs a flat JSON object to that URL. A non-2xx HTTP response is treated as a failure (same as a network error).
 
 ---
 
@@ -127,7 +134,7 @@ Every submission sends this shape:
 | Variable | Required | Description |
 |---|---|---|
 | `VITE_WEBHOOK_URL` | Yes (for data to flow) | Power Automate HTTP trigger URL |
-| `VITE_APP_PASSWORD` | No | App password — defaults to `inspector2026` |
+| `VITE_APP_PASSWORD` | No | App password — defaults to `inspector2026` if not set |
 
 Set these in Vercel under Project → Settings → Environment Variables. Both are `VITE_` prefixed so Vite embeds them at build time.
 
@@ -150,6 +157,13 @@ cp .env.example .env.local   # fill in your values
 npm run dev
 ```
 
+Run tests:
+
+```bash
+npm test          # single run
+npm run test:watch  # watch mode
+```
+
 ---
 
 ## Excel workbook
@@ -166,7 +180,7 @@ For QR code labels: print column L (QR Code) from the Equipment Registry, lamina
 
 ## Adding a new equipment type
 
-1. Add the type to the `CHECKLISTS` constant in `src/pages/inspect.tsx`
+1. Add the type to the `CHECKLISTS` constant in `src/pages/inspect.tsx` — include `min`/`max` on any `number` fields
 2. Add the type to the `EquipmentType` union type in the same file
 3. Add `<option>` to the Equipment Type `<select>` in the form
 4. Add the type to the Equipment Registry `Type` data validation list in the Excel workbook

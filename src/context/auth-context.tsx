@@ -2,7 +2,10 @@ import { createContext, useContext, useState, useCallback, ReactNode } from "rea
 
 const AUTH_KEY = "wvrtp_auth";
 const VALID_USERNAME = "WVRTP";
-const VALID_PASSWORD = "inspector2026";
+// Reads from VITE_APP_PASSWORD at build time. Falls back to "inspector2026" if
+// the env var is not set. Note: this value is embedded in the JS bundle —
+// it is not secret. See README § Auth for details.
+const VALID_PASSWORD = import.meta.env.VITE_APP_PASSWORD ?? "inspector2026";
 
 interface AuthContextValue {
   isAuthenticated: boolean;
@@ -15,7 +18,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
+  const [isAuthenticated, setIsAuthenticated] = useState(
     () => localStorage.getItem(AUTH_KEY) === "true"
   );
   const [loginError, setLoginError] = useState<string | null>(null);

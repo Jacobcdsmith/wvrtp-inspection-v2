@@ -6,21 +6,34 @@ const HISTORY_KEY = "wvrtp_inspections";
 type InspectionRecord = Record<string, string>;
 
 function ResultBadge({ result }: { result: string }) {
-  if (result === "Pass") return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold">
-      <CheckCircle2 className="w-3 h-3" /> Pass
-    </span>
-  );
-  if (result === "Attention") return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">
-      <AlertTriangle className="w-3 h-3" /> Attention
-    </span>
-  );
+  if (result === "Pass")
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+        <CheckCircle2 className="h-3 w-3" />
+        Pass
+      </span>
+    );
+  if (result === "Attention")
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+        <AlertTriangle className="h-3 w-3" />
+        Attention
+      </span>
+    );
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-800 text-xs font-semibold">
-      <XCircle className="w-3 h-3" /> Fail
+    <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+      <XCircle className="h-3 w-3" />
+      Fail
     </span>
   );
+}
+
+// Stable key from record identity, not array position.
+// Falls back to index only if both ID and Date are missing (shouldn't happen).
+function recordKey(rec: InspectionRecord, i: number): string {
+  if (rec["ID"] && rec["Date"]) return `${rec["ID"]}-${rec["Date"]}`;
+  if (rec["Date"]) return rec["Date"];
+  return String(i);
 }
 
 export default function HistoryPage() {
@@ -43,47 +56,50 @@ export default function HistoryPage() {
   };
 
   return (
-    <div className="max-w-lg mx-auto px-4 pb-8">
-      <div className="pt-5 pb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <History className="w-5 h-5 text-primary" />
-          <h1 className="text-lg font-bold text-foreground">Inspection History</h1>
-        </div>
+    <div className="mx-auto max-w-lg px-4 py-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="flex items-center gap-2 text-xl font-bold">
+          <History className="h-5 w-5" />
+          Inspection History
+        </h1>
         {records.length > 0 && (
           <button
             onClick={clearHistory}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors"
+            className="flex items-center gap-1 rounded-md border border-destructive px-3 py-1.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
           >
-            <Trash2 className="w-3.5 h-3.5" /> Clear
+            <Trash2 className="h-4 w-4" />
+            Clear
           </button>
         )}
       </div>
 
       {records.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <History className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">No inspections submitted yet on this device.</p>
-        </div>
+        <p className="text-muted-foreground text-sm">No inspections submitted yet on this device.</p>
       ) : (
-        <div className="space-y-3">
+        <ul className="space-y-3">
           {records.map((rec, i) => (
-            <div key={i} className="bg-card border border-border rounded-lg p-4">
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div>
-                  <span className="font-semibold text-sm text-foreground">{rec["ID"] || "—"}</span>
-                  <span className="text-muted-foreground text-xs ml-2">{rec["Equipment Type"] || ""}</span>
-                </div>
+            <li
+              key={recordKey(rec, i)}
+              className="rounded-lg border bg-card p-4 shadow-sm space-y-1"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-sm">{rec["ID"] || "\u2014"}</span>
                 <ResultBadge result={rec["Result"] || ""} />
               </div>
-              <div className="text-xs text-muted-foreground space-y-0.5">
-                <div>Inspector: {rec["Inspector"] || "—"}</div>
-                {rec["Date"] && <div>{new Date(rec["Date"]).toLocaleString()}</div>}
-                {rec["Address"] && <div className="truncate">{rec["Address"]}</div>}
-                {rec["Notes"] && <div className="text-foreground italic">"{rec["Notes"]}"</div>}
-              </div>
-            </div>
+              <div className="text-xs text-muted-foreground">{rec["Equipment Type"] || ""}</div>
+              <div className="text-xs text-muted-foreground">Inspector: {rec["Inspector"] || "\u2014"}</div>
+              {rec["Date"] && (
+                <div className="text-xs text-muted-foreground">{new Date(rec["Date"]).toLocaleString()}</div>
+              )}
+              {rec["Address"] && (
+                <div className="text-xs text-muted-foreground">{rec["Address"]}</div>
+              )}
+              {rec["Notes"] && (
+                <div className="text-xs italic text-muted-foreground">"{rec["Notes"]}"</div>
+              )}
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

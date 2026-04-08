@@ -3,7 +3,9 @@ import { useToast } from "../hooks/use-toast";
 import {
   CheckCircle2, AlertTriangle, XCircle,
   MapPin, Camera, Send, Loader2, Shield,
+  BookOpen, FileText, Image,
 } from "lucide-react";
+import { PUBLIC_PHOTOS, docsForType, assetUrl } from "../lib/public-assets";
 
 type EquipmentType = "Boiler" | "HVAC" | "Pressure Vessel" | "Fire Suppression" | "Other";
 type OverallResult = "Pass" | "Attention" | "Fail";
@@ -282,6 +284,70 @@ export default function InspectPage() {
                   )}
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Reference Materials — shown when an equipment type is selected */}
+        {equipmentType && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Reference Materials</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+
+            {/* Reference photos */}
+            <div className="rounded-lg border bg-card p-3 space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                <Image className="h-3.5 w-3.5" />
+                Photos
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {PUBLIC_PHOTOS.map((photo) => (
+                  <a
+                    key={photo.filename}
+                    href={assetUrl(photo.filename)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={photo.description}
+                    className="block aspect-square rounded overflow-hidden border border-border hover:opacity-80 transition-opacity"
+                  >
+                    <img
+                      src={assetUrl(photo.filename)}
+                      alt={photo.description}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Reference documents */}
+            <div className="rounded-lg border bg-card p-3 space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                <BookOpen className="h-3.5 w-3.5" />
+                Documents
+              </div>
+              <ul className="space-y-1.5">
+                {docsForType(equipmentType as "Boiler" | "HVAC" | "Pressure Vessel" | "Fire Suppression" | "Other").map((doc) => (
+                  <li key={doc.filename}>
+                    <a
+                      href={assetUrl(doc.filename)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-start gap-2 text-xs text-primary hover:underline"
+                    >
+                      <FileText className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                      <span>
+                        <span className="font-medium">{doc.filename}</span>
+                        <span className="text-muted-foreground ml-1">— {doc.description}</span>
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         )}

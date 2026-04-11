@@ -111,7 +111,7 @@ export default function InspectPage({ workbook }: Props) {
     saveToHistory(flatPayload);
 
     // Fire webhook if configured
-    const webhookUrl = (import.meta.env as Record<string, string>)[workbook.webhookEnvVar];
+    const webhookUrl = (import.meta.env as Record<string, string | undefined>)[workbook.webhookEnvVar];
     if (webhookUrl) {
       try {
         await fetch(webhookUrl, {

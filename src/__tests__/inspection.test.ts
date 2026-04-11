@@ -11,8 +11,9 @@ import type { ChecklistField } from "../lib/workbooks";
 
 // ─── Re-use the checklist definitions from workbooks.ts ─────────────────────
 
-const CHECKLISTS = WORKBOOKS[0].checklists;
-type EquipmentType = (typeof WORKBOOKS)[0]["equipmentTypes"][number];
+const mechanicalWorkbook = WORKBOOKS.find((wb) => wb.id === "mechanical")!;
+const CHECKLISTS = mechanicalWorkbook.checklists;
+type EquipmentType = string;
 
 const HISTORY_KEY = "wvrtp_inspections";
 
@@ -240,7 +241,7 @@ describe("payload shape", () => {
   it("always includes all required top-level keys", () => {
     const required = [
       "ID", "Equipment Type", "Inspector", "Result", "Date",
-      "Latitude", "Longitude", "Address", "Notes", "Photo",
+      "Latitude", "Longitude", "Address", "Notes", "Photo", "Workbook",
     ];
     const payload: Record<string, string> = {
       "ID": "BLR-001",
@@ -253,6 +254,7 @@ describe("payload shape", () => {
       "Address": "123 Main St",
       "Notes": "",
       "Photo": "",
+      "Workbook": "mechanical",
       pressure: "125",
       temperature: "180",
     };

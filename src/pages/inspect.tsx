@@ -4,50 +4,13 @@ import {
   CheckCircle2, AlertTriangle, XCircle,
   MapPin, Camera, Send, Loader2, Shield,
 } from "lucide-react";
+import type { WorkbookConfig } from "../lib/workbooks";
 
-type EquipmentType = "Boiler" | "HVAC" | "Pressure Vessel" | "Fire Suppression" | "Other";
 type OverallResult = "Pass" | "Attention" | "Fail";
 
-interface ChecklistField {
-  key: string;
-  label: string;
-  type: "number" | "select";
-  unit?: string;
-  options?: string[];
+interface Props {
+  workbook: WorkbookConfig;
 }
-
-const CHECKLISTS: Record<EquipmentType, ChecklistField[]> = {
-  Boiler: [
-    { key: "pressure",       label: "Pressure",        type: "number", unit: "PSI" },
-    { key: "temperature",    label: "Temperature",     type: "number", unit: "°F" },
-    { key: "waterLevel",     label: "Water Level",     type: "select", options: ["Normal","Low","High"] },
-    { key: "safetyValve",    label: "Safety Valve",    type: "select", options: ["Pass","Fail"] },
-    { key: "lowWaterCutoff", label: "Low-Water Cutoff", type: "select", options: ["Pass","Fail"] },
-    { key: "flameSafeguard", label: "Flame Safeguard",  type: "select", options: ["Pass","Fail"] },
-  ],
-  HVAC: [
-    { key: "temperature",      label: "Temperature",      type: "number", unit: "°F" },
-    { key: "filterCondition",  label: "Filter Condition",  type: "select", options: ["Pass","Fail"] },
-    { key: "refrigerantLevel", label: "Refrigerant Level", type: "select", options: ["Normal","Low"] },
-    { key: "thermostat",       label: "Thermostat",        type: "select", options: ["Pass","Fail"] },
-    { key: "ductwork",         label: "Ductwork",          type: "select", options: ["Pass","Fail"] },
-  ],
-  "Pressure Vessel": [
-    { key: "pressure",          label: "Pressure",            type: "number", unit: "PSI" },
-    { key: "safetyReliefValve", label: "Safety Relief Valve",  type: "select", options: ["Pass","Fail"] },
-    { key: "shellCondition",    label: "Shell Condition",      type: "select", options: ["Pass","Fail"] },
-    { key: "fittings",          label: "Fittings",             type: "select", options: ["Pass","Fail"] },
-  ],
-  "Fire Suppression": [
-    { key: "gaugePressure", label: "Gauge Pressure", type: "number", unit: "PSI" },
-    { key: "tamperSeal",   label: "Tamper Seal",    type: "select", options: ["Intact","Broken"] },
-    { key: "signage",      label: "Signage",         type: "select", options: ["Pass","Fail"] },
-    { key: "accessClear",  label: "Access Clear",    type: "select", options: ["Pass","Fail"] },
-  ],
-  Other: [
-    { key: "generalCondition", label: "General Condition", type: "select", options: ["Pass","Fail"] },
-  ],
-};
 
 function getUrlParam(key: string): string {
   const params = new URLSearchParams(window.location.search);
@@ -73,21 +36,21 @@ function saveToHistory(record: Record<string, unknown>) {
   }
 }
 
-export default function InspectPage() {
+export default function InspectPage({ workbook }: Props) {
   const { toast } = useToast();
-  const [equipmentId, setEquipmentId]       = useState(getUrlParam("id"));
-  const [isFromQr, setIsFromQr]             = useState(!!getUrlParam("id"));
-  const [equipmentType, setEquipmentType]   = useState<EquipmentType | "">("");
-  const [inspectorName, setInspectorName]   = useState("");
+  const [equipmentId, setEquipmentId]         = useState(getUrlParam("id"));
+  const [isFromQr, setIsFromQr]               = useState(!!getUrlParam("id"));
+  const [equipmentType, setEquipmentType]     = useState("");
+  const [inspectorName, setInspectorName]     = useState("");
   const [checklistValues, setChecklistValues] = useState<Record<string, string>>({});
-  const [overallResult, setOverallResult]   = useState<OverallResult | "">("");
-  const [notes, setNotes]                   = useState("");
-  const [photoFile, setPhotoFile]           = useState<File | null>(null);
-  const [latitude, setLatitude]             = useState("");
-  const [longitude, setLongitude]           = useState("");
-  const [address, setAddress]               = useState("");
-  const [gpsStatus, setGpsStatus]           = useState<"loading"|"success"|"error">("loading");
-  const [submitting, setSubmitting]         = useState(false);
+  const [overallResult, setOverallResult]     = useState<OverallResult | "">("");
+  const [notes, setNotes]                     = useState("");
+  const [photoFile, setPhotoFile]             = useState<File | null>(null);
+  const [latitude, setLatitude]               = useState("");
+  const [longitude, setLongitude]             = useState("");
+  const [address, setAddress]                 = useState("");
+  const [gpsStatus, setGpsStatus]             = useState<"loading"|"success"|"error">("loading");
+  const [submitting, setSubmitting]           = useState(false);
 
   useEffect(() => {
     if (!navigator.geolocation) { setGpsStatus("error"); return; }
@@ -140,6 +103,7 @@ export default function InspectPage() {
       "Address":        address || "",
       "Notes":          notes || "",
       "Photo":          photoFile?.name || "",
+      "Workbook":       workbook.id,
       ...checklistValues,
     };
 
@@ -147,7 +111,7 @@ export default function InspectPage() {
     saveToHistory(flatPayload);
 
     // Fire webhook if configured
-    const webhookUrl = import.meta.env.VITE_WEBHOOK_URL;
+    const webhookUrl = (import.meta.env as Record<string, string>)[workbook.webhookEnvVar];
     if (webhookUrl) {
       try {
         await fetch(webhookUrl, {
@@ -175,14 +139,14 @@ export default function InspectPage() {
     setSubmitting(false);
   };
 
-  const currentChecklist = equipmentType ? CHECKLISTS[equipmentType as EquipmentType] : [];
+  const currentChecklist = equipmentType ? (workbook.checklists[equipmentType] ?? []) : [];
 
   return (
     <div className="max-w-lg mx-auto px-4 pb-8">
       <div className="pt-5 pb-4">
         <div className="flex items-center gap-2 mb-1">
           <Shield className="w-5 h-5 text-primary" />
-          <h1 className="text-lg font-bold text-foreground">Equipment Inspection</h1>
+          <h1 className="text-lg font-bold text-foreground">{workbook.label} Equipment Inspection</h1>
         </div>
         <p className="text-sm text-muted-foreground">Complete all fields and submit your inspection.</p>
       </div>
@@ -218,16 +182,14 @@ export default function InspectPage() {
           <select
             id="equipmentType"
             value={equipmentType}
-            onChange={(e) => setEquipmentType(e.target.value as EquipmentType)}
+            onChange={(e) => setEquipmentType(e.target.value)}
             className="w-full h-12 px-3 rounded-lg border border-input bg-background text-base focus:outline-none focus:ring-2 focus:ring-ring"
             required
           >
             <option value="">Select type...</option>
-            <option>Boiler</option>
-            <option>HVAC</option>
-            <option>Pressure Vessel</option>
-            <option>Fire Suppression</option>
-            <option>Other</option>
+            {workbook.equipmentTypes.map((type) => (
+              <option key={type}>{type}</option>
+            ))}
           </select>
         </div>
 

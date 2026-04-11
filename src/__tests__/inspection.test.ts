@@ -6,56 +6,13 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { WORKBOOKS } from "../lib/workbooks";
+import type { ChecklistField } from "../lib/workbooks";
 
-// ─── Inline the pure logic under test ───────────────────────────────────────
-// We duplicate only the constants / pure functions here so the tests have no
-// React / DOM dependencies and run in <100ms. If you move these to a shared
-// lib/ module, import from there instead.
+// ─── Re-use the checklist definitions from workbooks.ts ─────────────────────
 
-type EquipmentType = "Boiler" | "HVAC" | "Pressure Vessel" | "Fire Suppression" | "Other";
-
-interface ChecklistField {
-  key: string;
-  label: string;
-  type: "number" | "select";
-  unit?: string;
-  options?: string[];
-  min?: number;
-  max?: number;
-}
-
-const CHECKLISTS: Record<EquipmentType, ChecklistField[]> = {
-  Boiler: [
-    { key: "pressure", label: "Pressure", type: "number", unit: "PSI", min: 0, max: 1000 },
-    { key: "temperature", label: "Temperature", type: "number", unit: "\u00b0F", min: 0, max: 1000 },
-    { key: "waterLevel", label: "Water Level", type: "select", options: ["Normal", "Low", "High"] },
-    { key: "safetyValve", label: "Safety Valve", type: "select", options: ["Pass", "Fail"] },
-    { key: "lowWaterCutoff", label: "Low-Water Cutoff", type: "select", options: ["Pass", "Fail"] },
-    { key: "flameSafeguard", label: "Flame Safeguard", type: "select", options: ["Pass", "Fail"] },
-  ],
-  HVAC: [
-    { key: "temperature", label: "Temperature", type: "number", unit: "\u00b0F", min: -50, max: 200 },
-    { key: "filterCondition", label: "Filter Condition", type: "select", options: ["Pass", "Fail"] },
-    { key: "refrigerantLevel", label: "Refrigerant Level", type: "select", options: ["Normal", "Low"] },
-    { key: "thermostat", label: "Thermostat", type: "select", options: ["Pass", "Fail"] },
-    { key: "ductwork", label: "Ductwork", type: "select", options: ["Pass", "Fail"] },
-  ],
-  "Pressure Vessel": [
-    { key: "pressure", label: "Pressure", type: "number", unit: "PSI", min: 0, max: 3000 },
-    { key: "safetyReliefValve", label: "Safety Relief Valve", type: "select", options: ["Pass", "Fail"] },
-    { key: "shellCondition", label: "Shell Condition", type: "select", options: ["Pass", "Fail"] },
-    { key: "fittings", label: "Fittings", type: "select", options: ["Pass", "Fail"] },
-  ],
-  "Fire Suppression": [
-    { key: "gaugePressure", label: "Gauge Pressure", type: "number", unit: "PSI", min: 0, max: 500 },
-    { key: "tamperSeal", label: "Tamper Seal", type: "select", options: ["Intact", "Broken"] },
-    { key: "signage", label: "Signage", type: "select", options: ["Pass", "Fail"] },
-    { key: "accessClear", label: "Access Clear", type: "select", options: ["Pass", "Fail"] },
-  ],
-  Other: [
-    { key: "generalCondition", label: "General Condition", type: "select", options: ["Pass", "Fail"] },
-  ],
-};
+const CHECKLISTS = WORKBOOKS[0].checklists;
+type EquipmentType = (typeof WORKBOOKS)[0]["equipmentTypes"][number];
 
 const HISTORY_KEY = "wvrtp_inspections";
 
@@ -308,5 +265,41 @@ describe("payload shape", () => {
     const date = new Date().toISOString();
     expect(() => new Date(date)).not.toThrow();
     expect(new Date(date).getFullYear()).toBeGreaterThan(2020);
+  });
+});
+
+describe("WORKBOOKS registry", () => {
+  it("has at least 2 workbook entries", () => {
+    expect(WORKBOOKS.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("every workbook has a non-empty id, label, and webhookEnvVar", () => {
+    for (const wb of WORKBOOKS) {
+      expect(wb.id.length).toBeGreaterThan(0);
+      expect(wb.label.length).toBeGreaterThan(0);
+      expect(wb.webhookEnvVar.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("every workbook has a non-empty checklists object", () => {
+    for (const wb of WORKBOOKS) {
+      expect(Object.keys(wb.checklists).length).toBeGreaterThan(0);
+      for (const fields of Object.values(wb.checklists)) {
+        expect(fields.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("every workbook equipmentTypes matches checklists keys", () => {
+    for (const wb of WORKBOOKS) {
+      for (const type of wb.equipmentTypes) {
+        expect(wb.checklists[type]).toBeDefined();
+      }
+    }
+  });
+
+  it("workbook ids are unique", () => {
+    const ids = WORKBOOKS.map((wb) => wb.id);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });

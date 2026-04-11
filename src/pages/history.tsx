@@ -91,6 +91,9 @@ export default function HistoryPage() {
               {rec["Date"] && (
                 <div className="text-xs text-muted-foreground">{new Date(rec["Date"]).toLocaleString()}</div>
               )}
+              {rec["Workbook"] && (
+                <div className="text-xs text-muted-foreground italic">{rec["Workbook"]}</div>
+              )}
               {rec["Address"] && (
                 <div className="text-xs text-muted-foreground">{rec["Address"]}</div>
               )}

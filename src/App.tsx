@@ -1,4 +1,4 @@
-import { Router, Route, Switch } from "wouter";
+import { Router, Route, Switch, Redirect } from "wouter";
 import { useHashLocation } from "wouter/use-hash-location";
 import { Toaster } from "./components/ui/toaster";
 import { TooltipProvider } from "./components/ui/tooltip";
@@ -9,6 +9,7 @@ import HistoryPage from "./pages/history";
 import NotFound from "./pages/not-found";
 import { ClipboardCheck, History, LogOut } from "lucide-react";
 import { Link, useRoute } from "wouter";
+import { WORKBOOKS } from "./lib/workbooks";
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   const [isActive] = useRoute(href);
@@ -37,10 +38,12 @@ function TopNav() {
           <span className="text-sm font-bold tracking-tight">WVRTP</span>
         </div>
         <nav className="flex items-center gap-1">
-          <NavLink href="/">
-            <ClipboardCheck className="w-4 h-4" />
-            Inspect
-          </NavLink>
+          {WORKBOOKS.map((wb) => (
+            <NavLink key={wb.id} href={`/inspect/${wb.id}`}>
+              <ClipboardCheck className="w-4 h-4" />
+              {wb.label}
+            </NavLink>
+          ))}
           <NavLink href="/history">
             <History className="w-4 h-4" />
             History
@@ -58,13 +61,26 @@ function TopNav() {
   );
 }
 
+function RootRedirect() {
+  // Preserve any ?id= query params so QR deep links continue to work
+  const hash = window.location.hash;
+  const qIdx = hash.indexOf("?");
+  const qs = qIdx !== -1 ? hash.substring(qIdx) : "";
+  return <Redirect to={`/inspect/${WORKBOOKS[0].id}${qs}`} />;
+}
+
 function ProtectedApp() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <TopNav />
       <main className="flex-1">
         <Switch>
-          <Route path="/" component={InspectPage} />
+          <Route path="/" component={RootRedirect} />
+          {WORKBOOKS.map((wb) => (
+            <Route key={wb.id} path={`/inspect/${wb.id}`}>
+              <InspectPage workbook={wb} />
+            </Route>
+          ))}
           <Route path="/history" component={HistoryPage} />
           <Route component={NotFound} />
         </Switch>

@@ -59,7 +59,7 @@ export const WORKBOOKS: WorkbookConfig[] = [
     id: "electrical",
     label: "Electrical",
     webhookEnvVar: "VITE_WEBHOOK_URL_ELECTRICAL",
-    equipmentTypes: ["Panel", "Generator", "UPS", "Transfer Switch", "Other"],
+    equipmentTypes: ["Panel", "Generator", "UPS", "Transfer Switch", "Substation", "Switchgear", "Transformer", "Chiller", "Other"],
     checklists: {
       Panel: [
         { key: "voltage",     label: "Voltage",     type: "number", unit: "V", min: 0, max: 600 },
@@ -85,6 +85,31 @@ export const WORKBOOKS: WorkbookConfig[] = [
       ],
       Other: [
         { key: "generalCondition", label: "General Condition", type: "select", options: ["Pass", "Fail"] },
+      ],
+      Substation: [
+        { key: "voltage",       label: "Voltage",        type: "number", unit: "V", min: 0, max: 15000 },
+        { key: "amps",          label: "Amps",           type: "number", unit: "A", min: 0, max: 5000 },
+        { key: "batteryVoltage",label: "Battery Voltage", type: "number", unit: "V", min: 0, max: 200 },
+        { key: "batteryAmps",   label: "Battery Amps",   type: "number", unit: "A", min: 0, max: 100 },
+        { key: "lighting",      label: "Lighting",       type: "select", options: ["Pass", "Fail"] },
+        { key: "ventFan",       label: "Vent Fan",       type: "select", options: ["Pass", "Fail"] },
+        { key: "groundLights",  label: "Ground Lights",  type: "select", options: ["Pass", "Fail"] },
+        { key: "oilLevel",      label: "Oil Level",      type: "select", options: ["Normal", "Low"] },
+        { key: "housekeeping",  label: "Housekeeping",   type: "select", options: ["Pass", "Fail"] },
+      ],
+      Switchgear: [
+        { key: "voltage",       label: "Voltage",        type: "number", unit: "V", min: 0, max: 15000 },
+        { key: "amps",          label: "Amps",           type: "number", unit: "A", min: 0, max: 5000 },
+        { key: "switchPosition",label: "Switch Position", type: "select", options: ["Closed", "Open", "Test"] },
+      ],
+      Transformer: [
+        { key: "oilLevel",  label: "Oil Level",  type: "select", options: ["Normal", "Low"] },
+        { key: "oilLeak",   label: "Oil Leak",   type: "select", options: ["None", "Minor", "Major"] },
+      ],
+      Chiller: [
+        { key: "oilLevel",          label: "Oil Level",          type: "select", options: ["Normal", "Low"] },
+        { key: "refrigerantLevel",  label: "Refrigerant Level",  type: "select", options: ["Normal", "Low"] },
+        { key: "oilLeak",           label: "Oil Leak",           type: "select", options: ["None", "Minor", "Major"] },
       ],
     },
   },

@@ -45,14 +45,22 @@ export default function EventLogPage() {
       submittedAt: new Date().toISOString(),
     };
     const webhookUrl = (import.meta.env as Record<string, string | undefined>)["VITE_WEBHOOK_URL"];
-    if (webhookUrl) {
-      try {
-        await fetch(webhookUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      } catch {
-        toast({ title: "Submit Failed", description: "Could not deliver to webhook.", variant: "destructive" });
+    if (!webhookUrl) {
+      toast({ title: "Submit Failed", description: "Webhook is not configured. This event could not be saved.", variant: "destructive" });
+      setSubmitting(false);
+      return;
+    }
+    try {
+      const response = await fetch(webhookUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      if (!response.ok) {
+        toast({ title: "Submit Failed", description: `Webhook returned HTTP ${response.status}.`, variant: "destructive" });
         setSubmitting(false);
         return;
       }
+    } catch {
+      toast({ title: "Submit Failed", description: "Could not deliver to webhook.", variant: "destructive" });
+      setSubmitting(false);
+      return;
     }
     toast({ title: "Event Logged", description: `${eventCode} — ${feederID}` });
     setEventCode(""); setDescription(""); setEquipmentID("");

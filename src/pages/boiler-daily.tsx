@@ -7,12 +7,18 @@ type OnlineStatus = "Online" | "Offline" | "";
 type SoftenerStatus = "Online" | "Regen" | "Offline" | "Bypass" | "";
 type BoilerStatus = "Online" | "Offline" | "Standby" | "";
 
+const getLocalDateString = () => {
+  const now = new Date();
+  const timezoneOffsetMs = now.getTimezoneOffset() * 60 * 1000;
+  return new Date(now.getTime() - timezoneOffsetMs).toISOString().slice(0, 10);
+};
+
 export default function BoilerDailyPage() {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
 
   const [shift, setShift] = useState<ShiftType>("");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(getLocalDateString());
   const [inspector, setInspector] = useState("");
 
   // City Water
@@ -57,14 +63,22 @@ export default function BoilerDailyPage() {
       submittedAt: new Date().toISOString(),
     };
     const webhookUrl = (import.meta.env as Record<string, string | undefined>)["VITE_WEBHOOK_URL"];
-    if (webhookUrl) {
-      try {
-        await fetch(webhookUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      } catch {
-        toast({ title: "Submit Failed", description: "Could not deliver to webhook.", variant: "destructive" });
+    if (!webhookUrl) {
+      toast({ title: "Submit Failed", description: "Webhook is not configured. This report could not be saved.", variant: "destructive" });
+      setSubmitting(false);
+      return;
+    }
+    try {
+      const response = await fetch(webhookUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      if (!response.ok) {
+        toast({ title: "Submit Failed", description: `Webhook returned HTTP ${response.status}.`, variant: "destructive" });
         setSubmitting(false);
         return;
       }
+    } catch {
+      toast({ title: "Submit Failed", description: "Could not deliver to webhook.", variant: "destructive" });
+      setSubmitting(false);
+      return;
     }
     toast({ title: "Boiler Daily Submitted", description: `${shift} shift report saved.` });
     setSubmitting(false);

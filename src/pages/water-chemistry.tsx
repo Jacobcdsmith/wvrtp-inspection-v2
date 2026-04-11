@@ -5,13 +5,19 @@ import { Droplets, Beaker, FlaskConical, Package, Loader2, Send, User, Calendar 
 type ShiftNum = "1" | "2" | "3" | "";
 type ChemStatus = "OK" | "Low" | "Order" | "";
 
+function getLocalDateString() {
+  const now = new Date();
+  const timezoneOffsetMs = now.getTimezoneOffset() * 60 * 1000;
+  return new Date(now.getTime() - timezoneOffsetMs).toISOString().slice(0, 10);
+}
+
 export default function WaterChemistryPage() {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
 
   // Header fields
   const [shift, setShift] = useState<ShiftNum>("");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(getLocalDateString());
   const [inspector, setInspector] = useState("");
 
   // Feedwater
@@ -55,14 +61,26 @@ export default function WaterChemistryPage() {
       submittedAt: new Date().toISOString(),
     };
     const webhookUrl = (import.meta.env as Record<string, string | undefined>)["VITE_WEBHOOK_URL"];
-    if (webhookUrl) {
-      try {
-        await fetch(webhookUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      } catch {
-        toast({ title: "Submit Failed", description: "Could not deliver to webhook.", variant: "destructive" });
+    if (!webhookUrl) {
+      toast({ title: "Submit Failed", description: "Webhook is not configured. This report could not be saved.", variant: "destructive" });
+      setSubmitting(false);
+      return;
+    }
+    try {
+      const response = await fetch(webhookUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      if (!response.ok) {
+        const responseText = (await response.text()).trim();
+        const description = responseText
+          ? `Webhook returned ${response.status} ${response.statusText}: ${responseText}`
+          : `Webhook returned ${response.status} ${response.statusText}.`;
+        toast({ title: "Submit Failed", description, variant: "destructive" });
         setSubmitting(false);
         return;
       }
+    } catch {
+      toast({ title: "Submit Failed", description: "Could not deliver to webhook.", variant: "destructive" });
+      setSubmitting(false);
+      return;
     }
     toast({ title: "Water Chemistry Submitted", description: `Shift ${shift} report saved.` });
     setSubmitting(false);

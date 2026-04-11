@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useToast } from "../hooks/use-toast";
 import {
   CheckCircle2, AlertTriangle, XCircle,
-  MapPin, Send, Loader2, Shield,
+  MapPin, Send, Loader2, Shield, ClipboardCheck, User,
 } from "lucide-react";
 import type { WorkbookConfig } from "../lib/workbooks";
 
@@ -140,219 +140,238 @@ export default function InspectPage({ workbook }: Props) {
   const currentChecklist = equipmentType ? (workbook.checklists[equipmentType] ?? []) : [];
 
   return (
-    <div className="max-w-lg mx-auto px-4 pb-8">
-      <div className="pt-5 pb-4">
-        <div className="flex items-center gap-2 mb-1">
-          <Shield className="w-5 h-5 text-primary" />
-          <h1 className="text-lg font-bold text-foreground">{workbook.label} Equipment Inspection</h1>
+    <div className="min-h-screen bg-slate-50 dark:bg-background">
+      {/* Gradient header */}
+      <div className="bg-gradient-to-r from-slate-800 to-slate-700 text-white px-6 py-5 shadow-lg">
+        <div className="max-w-2xl mx-auto flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
+            <ClipboardCheck className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">{workbook.label} Equipment Inspection</h1>
+            <p className="text-sm text-slate-300">Record inspection results for a single piece of equipment.</p>
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground">Record inspection results for a single piece of equipment.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Equipment ID */}
-        <div className="space-y-1.5">
-          <label htmlFor="equipmentId" className="text-sm font-semibold block">
-            Equipment ID <span className="text-destructive">*</span>
-          </label>
-          <div className="relative">
-            <input
-              id="equipmentId"
-              value={equipmentId}
-              onChange={(e) => { setEquipmentId(e.target.value); setIsFromQr(false); }}
-              placeholder="e.g. BLR-001"
-              className="w-full h-12 px-3 pr-28 rounded-lg border border-input bg-background text-base focus:outline-none focus:ring-2 focus:ring-ring"
-              required
-            />
-            {isFromQr && equipmentId && (
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 text-white text-xs font-medium px-2 py-1 rounded-md flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" /> QR Scanned
-              </span>
-            )}
-          </div>
-        </div>
+      <form onSubmit={handleSubmit}>
+        <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
 
-        {/* Inspector Name */}
-        <div className="space-y-1.5">
-          <label htmlFor="inspectorName" className="text-sm font-semibold block">
-            Inspector Name <span className="text-destructive">*</span>
-          </label>
-          <input
-            id="inspectorName"
-            value={inspectorName}
-            onChange={(e) => setInspectorName(e.target.value)}
-            placeholder="Your name"
-            className="w-full h-12 px-3 rounded-lg border border-input bg-background text-base focus:outline-none focus:ring-2 focus:ring-ring"
-            required
-          />
-        </div>
-
-        {/* Equipment Type */}
-        <div className="space-y-1.5">
-          <label htmlFor="equipmentType" className="text-sm font-semibold block">
-            Equipment Type <span className="text-destructive">*</span>
-          </label>
-          <select
-            id="equipmentType"
-            value={equipmentType}
-            onChange={(e) => setEquipmentType(e.target.value)}
-            className="w-full h-12 px-3 rounded-lg border border-input bg-background text-base focus:outline-none focus:ring-2 focus:ring-ring"
-            required
-          >
-            <option value="">Select type...</option>
-            {workbook.equipmentTypes.map((type) => (
-              <option key={type}>{type}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Dynamic Checklist */}
-        {equipmentType && currentChecklist.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="h-px flex-1 bg-border" />
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{equipmentType} Checklist</span>
-              <div className="h-px flex-1 bg-border" />
+          {/* Equipment ID & Inspector */}
+          <div className="bg-white dark:bg-card rounded-xl shadow-md overflow-hidden border border-slate-200 dark:border-border">
+            <div className="flex items-center gap-3 px-5 py-3 border-l-4 border-blue-500 bg-slate-50 dark:bg-muted/30">
+              <Shield className="w-4 h-4 text-blue-500" />
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600 dark:text-muted-foreground">Equipment Info</h2>
             </div>
-            <div className="bg-card border border-border rounded-lg p-4 space-y-3">
-              {currentChecklist.map((field) => (
-                <div key={field.key} className="space-y-1">
-                  <label htmlFor={field.key} className="text-sm font-medium block">
-                    {field.label}{field.unit && <span className="text-muted-foreground ml-1">({field.unit})</span>}
-                  </label>
-                  {field.type === "number" ? (
-                    <input
-                      id={field.key}
-                      type="number" step="any"
-                      value={checklistValues[field.key] || ""}
-                      onChange={(e) => updateChecklist(field.key, e.target.value)}
-                      placeholder={`Enter ${field.label.toLowerCase()}`}
-                      className="w-full h-11 px-3 rounded-lg border border-input bg-background text-base focus:outline-none focus:ring-2 focus:ring-ring"
-                    />
-                  ) : (
-                    <select
-                      id={field.key}
-                      value={checklistValues[field.key] || ""}
-                      onChange={(e) => updateChecklist(field.key, e.target.value)}
-                      className="w-full h-11 px-3 rounded-lg border border-input bg-background text-base focus:outline-none focus:ring-2 focus:ring-ring"
-                    >
-                      <option value="">Select...</option>
-                      {field.options?.map((opt) => <option key={opt}>{opt}</option>)}
-                    </select>
+            <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="equipmentId" className="text-xs font-semibold text-slate-500 dark:text-muted-foreground uppercase tracking-wide">
+                  Equipment ID <span className="text-destructive">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    id="equipmentId"
+                    value={equipmentId}
+                    onChange={(e) => { setEquipmentId(e.target.value); setIsFromQr(false); }}
+                    placeholder="e.g. BLR-001"
+                    className="w-full h-10 px-3 pr-28 rounded-lg border border-slate-200 dark:border-input bg-white dark:bg-background text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                  {isFromQr && equipmentId && (
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 text-white text-xs font-medium px-2 py-1 rounded-md flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" /> QR Scanned
+                    </span>
                   )}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              </div>
 
-        {/* Overall Result */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-semibold block">
-            Overall Result <span className="text-destructive">*</span>
-          </label>
-          <div className="bg-muted/40 rounded-lg p-2">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {(["Pass", "Attention", "Fail"] as OverallResult[]).map((r) => (
-                <button
-                  key={r} type="button"
-                  onClick={() => setOverallResult(r)}
-                  className={`flex flex-col items-center justify-center gap-1.5 py-3 px-3 rounded-lg border-2 font-semibold text-sm transition-all ${
-                    overallResult === r
-                      ? r === "Pass" ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 shadow-sm"
-                      : r === "Attention" ? "border-amber-500 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 shadow-sm"
-                      : "border-red-600 bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-400 shadow-sm"
-                      : r === "Pass" ? "border-border bg-card text-emerald-700 hover:border-emerald-400"
-                      : r === "Attention" ? "border-border bg-card text-amber-600 hover:border-amber-300"
-                      : "border-border bg-card text-red-600 hover:border-red-300"
-                  }`}
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="inspectorName" className="text-xs font-semibold text-slate-500 dark:text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                  <User className="w-3 h-3" /> Inspector Name <span className="text-destructive">*</span>
+                </label>
+                <input
+                  id="inspectorName"
+                  value={inspectorName}
+                  onChange={(e) => setInspectorName(e.target.value)}
+                  placeholder="Your name"
+                  className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-input bg-white dark:bg-background text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <label htmlFor="equipmentType" className="text-xs font-semibold text-slate-500 dark:text-muted-foreground uppercase tracking-wide">
+                  Equipment Type <span className="text-destructive">*</span>
+                </label>
+                <select
+                  id="equipmentType"
+                  value={equipmentType}
+                  onChange={(e) => setEquipmentType(e.target.value)}
+                  className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-input bg-white dark:bg-background text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
                 >
-                  {r === "Pass" && <CheckCircle2 className="w-6 h-6" />}
-                  {r === "Attention" && <AlertTriangle className="w-6 h-6" />}
-                  {r === "Fail" && <XCircle className="w-6 h-6" />}
-                  {r}
-                </button>
-              ))}
+                  <option value="">Select type...</option>
+                  {workbook.equipmentTypes.map((type) => (
+                    <option key={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
-          {overallResult && (
-            <p className={`text-xs mt-1 ${
-              overallResult === "Pass" ? "text-emerald-700 dark:text-emerald-400"
-              : overallResult === "Attention" ? "text-amber-600 dark:text-amber-400"
-              : "text-red-600 dark:text-red-400"
-            }`}>
-              {overallResult === "Pass" && "No follow-up required."}
-              {overallResult === "Attention" && "Creates a follow-up item."}
-              {overallResult === "Fail" && "Equipment must be tagged out of service."}
-            </p>
+
+          {/* Dynamic Checklist */}
+          {equipmentType && currentChecklist.length > 0 && (
+            <div className="bg-white dark:bg-card rounded-xl shadow-md overflow-hidden border border-slate-200 dark:border-border">
+              <div className="flex items-center gap-3 px-5 py-3 border-l-4 border-indigo-500 bg-slate-50 dark:bg-muted/30">
+                <ClipboardCheck className="w-4 h-4 text-indigo-500" />
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600 dark:text-muted-foreground">{equipmentType} Checklist</h2>
+              </div>
+              <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {currentChecklist.map((field) => (
+                  <div key={field.key} className="flex flex-col gap-1.5">
+                    <label htmlFor={field.key} className="text-xs font-semibold text-slate-500 dark:text-muted-foreground uppercase tracking-wide">
+                      {field.label}{field.unit && <span className="text-slate-400 ml-1 normal-case">({field.unit})</span>}
+                    </label>
+                    {field.type === "number" ? (
+                      <input
+                        id={field.key}
+                        type="number" step="any"
+                        value={checklistValues[field.key] || ""}
+                        onChange={(e) => updateChecklist(field.key, e.target.value)}
+                        placeholder={`Enter ${field.label.toLowerCase()}`}
+                        className="h-10 px-3 rounded-lg border border-slate-200 dark:border-input bg-white dark:bg-background text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    ) : (
+                      <select
+                        id={field.key}
+                        value={checklistValues[field.key] || ""}
+                        onChange={(e) => updateChecklist(field.key, e.target.value)}
+                        className="h-10 px-3 rounded-lg border border-slate-200 dark:border-input bg-white dark:bg-background text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select...</option>
+                        {field.options?.map((opt) => <option key={opt}>{opt}</option>)}
+                      </select>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
-        </div>
 
-        {/* Notes */}
-        <div className="space-y-1.5">
-          <label htmlFor="notes" className="text-sm font-semibold block">
-            Notes {equipmentType === "Other" && <span className="text-destructive">*</span>}
-          </label>
-          <textarea
-            id="notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Additional notes or follow-up items..."
-            rows={3}
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-base focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-          />
-        </div>
-
-        {/* Location (GPS) */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-semibold flex items-center gap-1.5">
-            <MapPin className="w-3.5 h-3.5" /> Location <span className="text-muted-foreground font-normal">(optional)</span>
-          </label>
-          <div className="flex items-center gap-2 h-11 px-3 rounded-lg border border-input bg-muted/30 text-sm">
-            {gpsStatus === "loading" && (
-              <>
-                <Loader2 className="w-4 h-4 text-muted-foreground animate-spin shrink-0" />
-                <span className="text-muted-foreground">Acquiring GPS...</span>
-              </>
-            )}
-            {gpsStatus === "error" && (
-              <>
-                <MapPin className="w-4 h-4 text-amber-500 shrink-0" />
-                <span className="text-muted-foreground">Unavailable</span>
-              </>
-            )}
-            {gpsStatus === "success" && (
-              <>
-                <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span className="text-foreground font-mono text-xs truncate">{latitude}, {longitude}</span>
-              </>
-            )}
+          {/* Overall Result */}
+          <div className="bg-white dark:bg-card rounded-xl shadow-md overflow-hidden border border-slate-200 dark:border-border">
+            <div className="flex items-center gap-3 px-5 py-3 border-l-4 border-slate-500 bg-slate-50 dark:bg-muted/30">
+              <Shield className="w-4 h-4 text-slate-500" />
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600 dark:text-muted-foreground">Overall Result <span className="text-destructive">*</span></h2>
+            </div>
+            <div className="p-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {(["Pass", "Attention", "Fail"] as OverallResult[]).map((r) => (
+                  <button
+                    key={r} type="button"
+                    onClick={() => setOverallResult(r)}
+                    className={`flex flex-col items-center justify-center gap-1.5 py-4 rounded-xl border-2 font-semibold text-sm transition-all ${
+                      overallResult === r
+                        ? r === "Pass" ? "bg-emerald-500 border-emerald-500 text-white shadow-md"
+                        : r === "Attention" ? "bg-amber-500 border-amber-500 text-white shadow-md"
+                        : "bg-red-500 border-red-500 text-white shadow-md"
+                        : r === "Pass" ? "border-slate-200 text-emerald-600 hover:border-emerald-300"
+                        : r === "Attention" ? "border-slate-200 text-amber-600 hover:border-amber-300"
+                        : "border-slate-200 text-red-600 hover:border-red-300"
+                    }`}
+                  >
+                    {r === "Pass" && <CheckCircle2 className="w-6 h-6" />}
+                    {r === "Attention" && <AlertTriangle className="w-6 h-6" />}
+                    {r === "Fail" && <XCircle className="w-6 h-6" />}
+                    {r}
+                  </button>
+                ))}
+              </div>
+              {overallResult && (
+                <p className={`text-xs mt-3 ${
+                  overallResult === "Pass" ? "text-emerald-700 dark:text-emerald-400"
+                  : overallResult === "Attention" ? "text-amber-600 dark:text-amber-400"
+                  : "text-red-600 dark:text-red-400"
+                }`}>
+                  {overallResult === "Pass" && "No follow-up required."}
+                  {overallResult === "Attention" && "Creates a follow-up item."}
+                  {overallResult === "Fail" && "Equipment must be tagged out of service."}
+                </p>
+              )}
+            </div>
           </div>
-          {gpsStatus === "error" && (
-            <p className="text-xs text-amber-600 flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3 shrink-0" /> GPS unavailable. You can still submit.
-            </p>
+
+          {/* Notes & Location */}
+          <div className="bg-white dark:bg-card rounded-xl shadow-md overflow-hidden border border-slate-200 dark:border-border">
+            <div className="flex items-center gap-3 px-5 py-3 border-l-4 border-slate-400 bg-slate-50 dark:bg-muted/30">
+              <MapPin className="w-4 h-4 text-slate-400" />
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600 dark:text-muted-foreground">Notes &amp; Location</h2>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="notes" className="text-xs font-semibold text-slate-500 dark:text-muted-foreground uppercase tracking-wide">
+                  Notes {equipmentType === "Other" && <span className="text-destructive">*</span>}
+                </label>
+                <textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Additional notes or follow-up items..."
+                  rows={3}
+                  className="px-3 py-2 rounded-lg border border-slate-200 dark:border-input bg-white dark:bg-background text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-slate-500 dark:text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                  <MapPin className="w-3 h-3" /> Location <span className="font-normal normal-case text-slate-400">(auto-detected)</span>
+                </label>
+                <div className="flex items-center gap-2 h-10 px-3 rounded-lg border border-slate-200 dark:border-input bg-slate-50 dark:bg-muted/20 text-sm">
+                  {gpsStatus === "loading" && (
+                    <>
+                      <Loader2 className="w-4 h-4 text-slate-400 animate-spin shrink-0" />
+                      <span className="text-slate-400">Acquiring GPS...</span>
+                    </>
+                  )}
+                  {gpsStatus === "error" && (
+                    <>
+                      <MapPin className="w-4 h-4 text-amber-500 shrink-0" />
+                      <span className="text-slate-400">Unavailable</span>
+                    </>
+                  )}
+                  {gpsStatus === "success" && (
+                    <>
+                      <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span className="font-mono text-xs truncate">{latitude}, {longitude}</span>
+                    </>
+                  )}
+                </div>
+                {gpsStatus === "error" && (
+                  <p className="text-xs text-amber-600 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3 shrink-0" /> GPS unavailable. You can still submit.
+                  </p>
+                )}
+                {gpsStatus === "success" && address && (
+                  <p className="text-xs text-slate-400 truncate">{address}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {gpsStatus === "loading" && (
+            <p className="text-xs text-slate-400 text-center">Waiting for GPS… you may submit without location.</p>
           )}
-          {gpsStatus === "success" && address && (
-            <p className="text-xs text-muted-foreground truncate">{address}</p>
-          )}
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold shadow-lg transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</> : <><Send className="w-4 h-4" /> Submit Inspection</>}
+          </button>
+
         </div>
-
-        {/* GPS acquiring hint above submit */}
-        {gpsStatus === "loading" && (
-          <p className="text-xs text-muted-foreground text-center">
-            Waiting for GPS... you may submit without location.
-          </p>
-        )}
-
-        {/* Submit */}
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full h-14 rounded-lg bg-primary text-primary-foreground font-bold text-base flex items-center justify-center gap-2 hover:opacity-90 active:opacity-80 transition-opacity disabled:opacity-50"
-        >
-          {submitting ? <><Loader2 className="w-5 h-5 animate-spin" /> Submitting...</> : <><Send className="w-5 h-5" /> Submit Inspection</>}
-        </button>
       </form>
     </div>
   );

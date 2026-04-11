@@ -18,10 +18,16 @@ function makeEmptyRows(): LogRow[] {
   return HOURS.map(() => ({ fire: "", upperAir: "", lowerAir: "", instAir: "", outdoorTemp: "", gasPsi: "", notes: "" }));
 }
 
+function getLocalDateString(): string {
+  const now = new Date();
+  const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 10);
+}
+
 export default function DailyLogPage() {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(getLocalDateString());
   const [nightOperator, setNightOperator] = useState("");
   const [dayOperator, setDayOperator] = useState("");
   const [rows, setRows] = useState<LogRow[]>(makeEmptyRows());
@@ -48,14 +54,22 @@ export default function DailyLogPage() {
       submittedAt: new Date().toISOString(),
     };
     const webhookUrl = (import.meta.env as Record<string, string | undefined>)["VITE_WEBHOOK_URL"];
-    if (webhookUrl) {
-      try {
-        await fetch(webhookUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      } catch {
-        toast({ title: "Submit Failed", description: "Could not deliver to webhook.", variant: "destructive" });
+    if (!webhookUrl) {
+      toast({ title: "Submit Failed", description: "Webhook is not configured. This log could not be saved.", variant: "destructive" });
+      setSubmitting(false);
+      return;
+    }
+    try {
+      const response = await fetch(webhookUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      if (!response.ok) {
+        toast({ title: "Submit Failed", description: `Webhook returned ${response.status}.`, variant: "destructive" });
         setSubmitting(false);
         return;
       }
+    } catch {
+      toast({ title: "Submit Failed", description: "Could not deliver to webhook.", variant: "destructive" });
+      setSubmitting(false);
+      return;
     }
     toast({ title: "Daily Log Submitted", description: `Log for ${date} saved.` });
     setRows(makeEmptyRows());
@@ -125,10 +139,10 @@ export default function DailyLogPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="bg-slate-100 dark:bg-muted/50 sticky top-0 z-20">
-                    <th className="sticky left-0 z-10 bg-slate-100 dark:bg-muted/50 px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase tracking-wide border-b border-slate-200 min-w-[72px]">Time</th>
+                  <tr className="bg-slate-100 dark:bg-muted/50">
+                    <th className="sticky top-0 left-0 z-30 bg-slate-100 dark:bg-muted/50 px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase tracking-wide border-b border-slate-200 min-w-[72px]">Time</th>
                     {columns.map(c => (
-                      <th key={c.key} className={`px-2 py-2 text-left text-xs font-bold text-slate-600 uppercase tracking-wide border-b border-slate-200 ${c.w}`}>{c.label}</th>
+                      <th key={c.key} className={`sticky top-0 z-20 bg-slate-100 dark:bg-muted/50 px-2 py-2 text-left text-xs font-bold text-slate-600 uppercase tracking-wide border-b border-slate-200 ${c.w}`}>{c.label}</th>
                     ))}
                   </tr>
                 </thead>

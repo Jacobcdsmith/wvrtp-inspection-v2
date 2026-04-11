@@ -30,11 +30,19 @@ function makeItems(): CheckItem[] {
   return INITIAL_ITEMS.map(i => ({ ...i, result: "", comments: "", initials: "" }));
 }
 
+function getLocalDateString(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export default function WeeklyOpsPage() {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [inspector, setInspector] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(getLocalDateString());
   const [items, setItems] = useState<CheckItem[]>(makeItems());
 
   const updateItem = (id: string, field: keyof CheckItem, value: string) => {
@@ -66,14 +74,22 @@ export default function WeeklyOpsPage() {
       submittedAt: new Date().toISOString(),
     };
     const webhookUrl = (import.meta.env as Record<string, string | undefined>)["VITE_WEBHOOK_URL"];
-    if (webhookUrl) {
-      try {
-        await fetch(webhookUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      } catch {
-        toast({ title: "Submit Failed", description: "Could not deliver to webhook.", variant: "destructive" });
+    if (!webhookUrl) {
+      toast({ title: "Submit Failed", description: "Webhook is not configured. This checklist could not be saved.", variant: "destructive" });
+      setSubmitting(false);
+      return;
+    }
+    try {
+      const response = await fetch(webhookUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      if (!response.ok) {
+        toast({ title: "Submit Failed", description: `Webhook returned HTTP ${response.status}.`, variant: "destructive" });
         setSubmitting(false);
         return;
       }
+    } catch {
+      toast({ title: "Submit Failed", description: "Could not deliver to webhook.", variant: "destructive" });
+      setSubmitting(false);
+      return;
     }
     toast({ title: "Weekly Ops Submitted", description: `${passCount} Pass / ${failCount} Fail / ${naCount} N/A` });
     setItems(makeItems()); setInspector(""); setSubmitting(false);

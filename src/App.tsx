@@ -45,7 +45,7 @@ function TopNav() {
           </svg>
           <span className="text-sm font-bold tracking-tight">WVRTP</span>
         </div>
-        <nav className="flex items-center gap-0.5 overflow-x-auto flex-nowrap flex-1 min-w-0 scrollbar-hide">
+        <nav className="flex items-center gap-0.5 overflow-x-auto flex-nowrap flex-1 min-w-0">
           {WORKBOOKS.map((wb) => (
             <NavLink key={wb.id} href={`/inspect/${wb.id}`}>
               <ClipboardCheck className="w-3.5 h-3.5" />

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useToast } from "../hooks/use-toast";
 import {
   CheckCircle2, AlertTriangle, XCircle,
-  MapPin, Camera, Send, Loader2, Shield,
+  MapPin, Send, Loader2, Shield,
 } from "lucide-react";
 import type { WorkbookConfig } from "../lib/workbooks";
 
@@ -45,7 +45,6 @@ export default function InspectPage({ workbook }: Props) {
   const [checklistValues, setChecklistValues] = useState<Record<string, string>>({});
   const [overallResult, setOverallResult]     = useState<OverallResult | "">("");
   const [notes, setNotes]                     = useState("");
-  const [photoFile, setPhotoFile]             = useState<File | null>(null);
   const [latitude, setLatitude]               = useState("");
   const [longitude, setLongitude]             = useState("");
   const [address, setAddress]                 = useState("");
@@ -102,7 +101,6 @@ export default function InspectPage({ workbook }: Props) {
       "Longitude":      longitude || "",
       "Address":        address || "",
       "Notes":          notes || "",
-      "Photo":          photoFile?.name || "",
       "Workbook":       workbook.id,
       ...checklistValues,
     };
@@ -135,7 +133,7 @@ export default function InspectPage({ workbook }: Props) {
     // Reset form
     setEquipmentId(""); setIsFromQr(false); setEquipmentType("");
     setInspectorName(""); setChecklistValues({}); setOverallResult("");
-    setNotes(""); setPhotoFile(null);
+    setNotes("");
     setSubmitting(false);
   };
 
@@ -148,12 +146,12 @@ export default function InspectPage({ workbook }: Props) {
           <Shield className="w-5 h-5 text-primary" />
           <h1 className="text-lg font-bold text-foreground">{workbook.label} Equipment Inspection</h1>
         </div>
-        <p className="text-sm text-muted-foreground">Complete all fields and submit your inspection.</p>
+        <p className="text-sm text-muted-foreground">Record inspection results for a single piece of equipment.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {/* Equipment ID */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <label htmlFor="equipmentId" className="text-sm font-semibold block">
             Equipment ID <span className="text-destructive">*</span>
           </label>
@@ -174,8 +172,23 @@ export default function InspectPage({ workbook }: Props) {
           </div>
         </div>
 
+        {/* Inspector Name */}
+        <div className="space-y-1.5">
+          <label htmlFor="inspectorName" className="text-sm font-semibold block">
+            Inspector Name <span className="text-destructive">*</span>
+          </label>
+          <input
+            id="inspectorName"
+            value={inspectorName}
+            onChange={(e) => setInspectorName(e.target.value)}
+            placeholder="Your name"
+            className="w-full h-12 px-3 rounded-lg border border-input bg-background text-base focus:outline-none focus:ring-2 focus:ring-ring"
+            required
+          />
+        </div>
+
         {/* Equipment Type */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <label htmlFor="equipmentType" className="text-sm font-semibold block">
             Equipment Type <span className="text-destructive">*</span>
           </label>
@@ -193,21 +206,6 @@ export default function InspectPage({ workbook }: Props) {
           </select>
         </div>
 
-        {/* Inspector Name */}
-        <div className="space-y-2">
-          <label htmlFor="inspectorName" className="text-sm font-semibold block">
-            Inspector Name <span className="text-destructive">*</span>
-          </label>
-          <input
-            id="inspectorName"
-            value={inspectorName}
-            onChange={(e) => setInspectorName(e.target.value)}
-            placeholder="Your name"
-            className="w-full h-12 px-3 rounded-lg border border-input bg-background text-base focus:outline-none focus:ring-2 focus:ring-ring"
-            required
-          />
-        </div>
-
         {/* Dynamic Checklist */}
         {equipmentType && currentChecklist.length > 0 && (
           <div className="space-y-3">
@@ -216,9 +214,9 @@ export default function InspectPage({ workbook }: Props) {
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{equipmentType} Checklist</span>
               <div className="h-px flex-1 bg-border" />
             </div>
-            <div className="bg-card border border-border rounded-lg p-4 space-y-4">
+            <div className="bg-card border border-border rounded-lg p-4 space-y-3">
               {currentChecklist.map((field) => (
-                <div key={field.key} className="space-y-1.5">
+                <div key={field.key} className="space-y-1">
                   <label htmlFor={field.key} className="text-sm font-medium block">
                     {field.label}{field.unit && <span className="text-muted-foreground ml-1">({field.unit})</span>}
                   </label>
@@ -249,36 +247,49 @@ export default function InspectPage({ workbook }: Props) {
         )}
 
         {/* Overall Result */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <label className="text-sm font-semibold block">
             Overall Result <span className="text-destructive">*</span>
           </label>
-          <div className="grid grid-cols-3 gap-3">
-            {(["Pass", "Attention", "Fail"] as OverallResult[]).map((r) => (
-              <button
-                key={r} type="button"
-                onClick={() => setOverallResult(r)}
-                className={`flex flex-col items-center justify-center gap-1.5 py-4 px-3 rounded-lg border-2 font-semibold text-sm transition-all ${
-                  overallResult === r
-                    ? r === "Pass" ? "border-emerald-600 bg-emerald-600 text-white shadow-md"
-                    : r === "Attention" ? "border-amber-500 bg-amber-500 text-white shadow-md"
-                    : "border-red-600 bg-red-600 text-white shadow-md"
-                    : r === "Pass" ? "border-border bg-card text-emerald-700 hover:border-emerald-400"
-                    : r === "Attention" ? "border-border bg-card text-amber-600 hover:border-amber-300"
-                    : "border-border bg-card text-red-600 hover:border-red-300"
-                }`}
-              >
-                {r === "Pass" && <CheckCircle2 className="w-7 h-7" />}
-                {r === "Attention" && <AlertTriangle className="w-7 h-7" />}
-                {r === "Fail" && <XCircle className="w-7 h-7" />}
-                {r}
-              </button>
-            ))}
+          <div className="bg-muted/40 rounded-lg p-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {(["Pass", "Attention", "Fail"] as OverallResult[]).map((r) => (
+                <button
+                  key={r} type="button"
+                  onClick={() => setOverallResult(r)}
+                  className={`flex flex-col items-center justify-center gap-1.5 py-3 px-3 rounded-lg border-2 font-semibold text-sm transition-all ${
+                    overallResult === r
+                      ? r === "Pass" ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 shadow-sm"
+                      : r === "Attention" ? "border-amber-500 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 shadow-sm"
+                      : "border-red-600 bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-400 shadow-sm"
+                      : r === "Pass" ? "border-border bg-card text-emerald-700 hover:border-emerald-400"
+                      : r === "Attention" ? "border-border bg-card text-amber-600 hover:border-amber-300"
+                      : "border-border bg-card text-red-600 hover:border-red-300"
+                  }`}
+                >
+                  {r === "Pass" && <CheckCircle2 className="w-6 h-6" />}
+                  {r === "Attention" && <AlertTriangle className="w-6 h-6" />}
+                  {r === "Fail" && <XCircle className="w-6 h-6" />}
+                  {r}
+                </button>
+              ))}
+            </div>
           </div>
+          {overallResult && (
+            <p className={`text-xs mt-1 ${
+              overallResult === "Pass" ? "text-emerald-700 dark:text-emerald-400"
+              : overallResult === "Attention" ? "text-amber-600 dark:text-amber-400"
+              : "text-red-600 dark:text-red-400"
+            }`}>
+              {overallResult === "Pass" && "No follow-up required."}
+              {overallResult === "Attention" && "Creates a follow-up item."}
+              {overallResult === "Fail" && "Equipment must be tagged out of service."}
+            </p>
+          )}
         </div>
 
         {/* Notes */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <label htmlFor="notes" className="text-sm font-semibold block">
             Notes {equipmentType === "Other" && <span className="text-destructive">*</span>}
           </label>
@@ -286,50 +297,53 @@ export default function InspectPage({ workbook }: Props) {
             id="notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Additional observations, concerns, or follow-up items..."
+            placeholder="Additional notes or follow-up items..."
             rows={3}
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-base focus:outline-none focus:ring-2 focus:ring-ring resize-none"
           />
         </div>
 
-        {/* Photo */}
-        <div className="space-y-2">
-          <label htmlFor="photo" className="text-sm font-semibold block">Photo</label>
-          <label
-            htmlFor="photo"
-            className="flex items-center justify-center gap-2 h-12 rounded-lg border-2 border-dashed border-border bg-card hover:border-primary/40 cursor-pointer transition-colors text-sm font-medium text-muted-foreground"
-          >
-            <Camera className="w-4 h-4" />
-            {photoFile ? photoFile.name : "Tap to capture or upload photo"}
-          </label>
-          <input id="photo" type="file" accept="image/*" capture="environment" className="hidden"
-            onChange={(e) => setPhotoFile(e.target.files?.[0] || null)} />
-        </div>
-
-        {/* GPS */}
-        <div className="space-y-2">
+        {/* Location (GPS) */}
+        <div className="space-y-1.5">
           <label className="text-sm font-semibold flex items-center gap-1.5">
-            <MapPin className="w-3.5 h-3.5" /> Location
+            <MapPin className="w-3.5 h-3.5" /> Location <span className="text-muted-foreground font-normal">(optional)</span>
           </label>
-          <div className="bg-card border border-border rounded-lg p-3 space-y-1">
+          <div className="flex items-center gap-2 h-11 px-3 rounded-lg border border-input bg-muted/30 text-sm">
             {gpsStatus === "loading" && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Acquiring GPS...
-              </div>
+              <>
+                <Loader2 className="w-4 h-4 text-muted-foreground animate-spin shrink-0" />
+                <span className="text-muted-foreground">Acquiring GPS...</span>
+              </>
             )}
             {gpsStatus === "error" && (
-              <div className="flex items-center gap-2 text-sm text-amber-600">
-                <AlertTriangle className="w-3.5 h-3.5" /> GPS unavailable — submission still allowed
-              </div>
+              <>
+                <MapPin className="w-4 h-4 text-amber-500 shrink-0" />
+                <span className="text-muted-foreground">Unavailable</span>
+              </>
             )}
             {gpsStatus === "success" && (
               <>
-                <div className="text-xs text-muted-foreground font-mono">{latitude}, {longitude}</div>
-                {address && <div className="text-sm text-foreground">{address}</div>}
+                <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span className="text-foreground font-mono text-xs truncate">{latitude}, {longitude}</span>
               </>
             )}
           </div>
+          {gpsStatus === "error" && (
+            <p className="text-xs text-amber-600 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3 shrink-0" /> GPS unavailable. You can still submit.
+            </p>
+          )}
+          {gpsStatus === "success" && address && (
+            <p className="text-xs text-muted-foreground truncate">{address}</p>
+          )}
         </div>
+
+        {/* GPS acquiring hint above submit */}
+        {gpsStatus === "loading" && (
+          <p className="text-xs text-muted-foreground text-center">
+            Waiting for GPS... you may submit without location.
+          </p>
+        )}
 
         {/* Submit */}
         <button

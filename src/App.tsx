@@ -16,7 +16,9 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
   return (
     <Link href={href}>
       <span className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
-        isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+        isActive
+          ? "bg-primary text-primary-foreground border-t-2 border-t-primary-foreground/60"
+          : "text-muted-foreground/70 hover:text-foreground hover:bg-muted"
       }`}>
         {children}
       </span>

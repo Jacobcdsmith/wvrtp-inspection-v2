@@ -1,6 +1,6 @@
 # WVRTP QR Code Inspection System — v2
 
-Internal technical documentation for the WVRTP equipment inspection web app. For the system design overview and Excel template, see `/WVRTP-QR-Inspection-System-Design-1-2.pdf` and `WVRTP-Equipment-Inspection-Template-2.xlsx` in this repo.
+Internal technical documentation for the WVRTP equipment inspection web app. For the system design overview and Excel template, see `/WVRTP-QR-Inspection-System-Design-1-2.pdf` and `WVRTP-Master-Inspection-Workbook.xlsx` in this repo.
 
 ---
 
@@ -168,7 +168,7 @@ npm run test:watch  # watch mode
 
 ## Excel workbook
 
-See `WVRTP-Equipment-Inspection-Template-2.xlsx` in this repo. It has three sheets:
+See `WVRTP-Master-Inspection-Workbook.xlsx` in this repo. It has three sheets:
 
 - **Equipment Registry** — master list of all tracked equipment, QR Code URL per item, QR code image via Excel `IMAGE` formula. Add a row here when installing new equipment; QR code generates automatically.
 - **Inspection Log** — one row per submission, populated by Power Automate. The `Type` column auto-fills from the Registry via VLOOKUP. Do not manually edit this sheet.

@@ -88,4 +88,39 @@ export const WORKBOOKS: WorkbookConfig[] = [
       ],
     },
   },
+  {
+    id: "chemical-sheep",
+    label: "Chemical – Sheep",
+    webhookEnvVar: "VITE_WEBHOOK_URL_CHEMICAL_SHEEP",
+    equipmentTypes: ["Drug Residue", "Parasite Screen", "Heavy Metal", "Other"],
+    checklists: {
+      "Drug Residue": [
+        { key: "animalTag",      label: "Animal Tag / ID",        type: "select", options: ["Tagged", "Untagged"] },
+        { key: "sampleType",     label: "Sample Type",             type: "select", options: ["Blood", "Urine", "Tissue", "Milk"] },
+        { key: "drugClass",      label: "Drug Class",              type: "select", options: ["Antibiotic", "Antiparasitic", "Hormone", "NSAID", "Other"] },
+        { key: "testMethod",     label: "Test Method",             type: "select", options: ["ELISA", "Strip Test", "PCR", "Culture", "Other"] },
+        { key: "withdrawalMet",  label: "Withdrawal Period Met",   type: "select", options: ["Yes", "No", "N/A"] },
+        { key: "testResult",     label: "Test Result",             type: "select", options: ["Negative", "Positive", "Inconclusive"] },
+      ],
+      "Parasite Screen": [
+        { key: "animalTag",      label: "Animal Tag / ID",         type: "select", options: ["Tagged", "Untagged"] },
+        { key: "sampleType",     label: "Sample Type",             type: "select", options: ["Fecal", "Blood", "Tissue"] },
+        { key: "parasiteType",   label: "Parasite Type",           type: "select", options: ["Nematode", "Protozoa", "External", "Other"] },
+        { key: "eggCount",       label: "Fecal Egg Count (EPG)",   type: "number", unit: "EPG",  min: 0, max: 10000 },
+        { key: "testResult",     label: "Test Result",             type: "select", options: ["Negative", "Positive", "Inconclusive"] },
+      ],
+      "Heavy Metal": [
+        { key: "animalTag",      label: "Animal Tag / ID",         type: "select", options: ["Tagged", "Untagged"] },
+        { key: "sampleType",     label: "Sample Type",             type: "select", options: ["Blood", "Tissue", "Fleece", "Feed"] },
+        { key: "metalTested",    label: "Metal Tested",            type: "select", options: ["Lead", "Arsenic", "Mercury", "Cadmium", "Other"] },
+        { key: "concentration",  label: "Concentration",           type: "number", unit: "ppm", min: 0, max: 1000 },
+        { key: "testResult",     label: "Test Result",             type: "select", options: ["Within Limits", "Exceeds Limits", "Inconclusive"] },
+      ],
+      Other: [
+        { key: "animalTag",      label: "Animal Tag / ID",         type: "select", options: ["Tagged", "Untagged"] },
+        { key: "sampleType",     label: "Sample Type",             type: "select", options: ["Blood", "Urine", "Fecal", "Tissue", "Other"] },
+        { key: "testResult",     label: "Test Result",             type: "select", options: ["Negative", "Positive", "Inconclusive"] },
+      ],
+    },
+  },
 ];
